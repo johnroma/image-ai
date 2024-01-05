@@ -1,70 +1,70 @@
+import { getOpenAi } from "./get-open-ai"
 class AIImage extends HTMLImageElement {
   static get observedAttributes() {
-    return ["data-fallback-src", "src"]
+    return ["data-fallback"]
   }
-
+  private _fallbackSrc: string | null = null
+  private _prompt: string | null = null
   private _originalSrc: string | null = null
   private svgPlaceholder: string | null = null
+  private _endpoint: string | null = null
+  private ph_w: number = 256
+  private ph_h: number = 256
 
   constructor() {
     super()
+    this.ph_w = Number(super.getAttribute("width")) || 256
+    this.ph_h = Number(super.getAttribute("height")) || 256
+    this.svgPlaceholder = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${this.ph_w} ${this.ph_h}"><rect width="${this.ph_w}" height="${this.ph_h}" fill="#ddd"/></svg>`
 
-    const ph_w = super.width || 10
-    const ph_h = super.height || 10
-    this.svgPlaceholder = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${ph_w} ${ph_h}"><rect width="${ph_w}" height="${ph_h}" fill="#ddd"/></svg>`
-    //  this.addEventListener("error", () => this.handleLoadError())
-    //this.addEventListener("click", () => this.handleClick())
-    this._fallbackSrc = this.onerror
-    this._originalSrc = this.getAttribute("src") // Use internal property
+    this._originalSrc = this.getAttribute("currentSrc")
+    this._prompt = this.getAttribute("alt")
+
+    this._endpoint = super.getAttribute("src")?.toString() || null
+    this.addEventListener("error", (_event) => {
+      super.src =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(this.svgPlaceholder as string)
+    })
     super.src =
-      "data:image/svg+xml;utf8," + encodeURIComponent(this.svgPlaceholder) ||
-      ("" as any)
+      "data:image/svg+xml;utf8," +
+      encodeURIComponent(this.svgPlaceholder as string)
 
-    setTimeout(() => {
-      super.src = "https://picsum.photos/200/300"
-    }, 1000)
+    setTimeout(async () => {
+      if (!this._prompt) {
+        return
+      }
+      const openAiResponse = await this.getOpenAi(
+        this._endpoint as string,
+        this._prompt as string,
+        this.ph_w as number,
+        this.ph_h as number
+      )
+      super.src = openAiResponse || this._fallbackSrc || ""
+    }, 1)
   }
 
   get src(): string {
-    return this._originalSrc || "" // Return internal value
+    return this._originalSrc || ""
   }
 
   set src(value: string) {
     if (this._originalSrc !== value && this.src !== undefined) {
-      super.src = value // Update internal value
+      super.src = value
     }
   }
-
-  // get fallbackSrc(): string | null {
-  //   return this._fallbackSrc
-  // }
 
   set fallbackSrc(value: string | null) {
     this._fallbackSrc = value
   }
 
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-    // if (oldValue === newValue) return // Prevent unnecessary updates
-    // if (name === "data-fallback-src") {
-    //   this.fallbackSrc = newValue
-    // } else if (name === "src") {
-    //   this.style.opacity = "1"
-    //   //  this.src = newValue // This will not trigger the image to load
-    // }
-  }
-
-  //handleLoadError(): void {
-  // if (this.fallbackSrc) {
-  //  super.src = this.fallbackSrc // Use super.src to change the image
-  // }
-  //  }
-
-  handleClick(): void {
-    console.log("AI image clicked!")
-    if (this.fallbackSrc) {
-      super.src = this.fallbackSrc // Use super.src to change the image
+  attributeChangedCallback(name: string, _oldValue: string, newValue: string) {
+    if (name === "data-fallback") {
+      this.fallbackSrc = newValue
     }
   }
+
+  protected getOpenAi = getOpenAi
 }
 
 customElements.define("ai-image", AIImage, { extends: "img" })
