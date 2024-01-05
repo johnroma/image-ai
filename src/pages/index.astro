@@ -1,0 +1,40 @@
+---
+
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="/favicon.svg"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width"
+    />
+    <meta
+      name="generator"
+      content={Astro.generator}
+    />
+    <title>Astro</title>
+  </head>
+  <body>
+    <img
+      is="ai-image"
+      src="https://placehold.co/230x100x"
+      data-fallback-src="https://placehold.co/300x100"
+      alt="AI Image"
+      width="300"
+      height="100"
+    />
+    <img
+      is="ai-image"
+      src="https://placehold.co/230x10ddd"
+      onerror="this.src='https://placehold.co/100x100';"
+      alt="AI Image"
+    />
+  </body>
+  <script src="../scripts/ai-image.js"></script>
+</html>
